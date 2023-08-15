@@ -1,0 +1,142 @@
+---
+title: "Phylogenetic Trees for Full Sequences"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup}
+knitr::opts_knit$set(root.dir = "/Users/samanthaworthy/Documents/GitHub/Sandhills-Flora")
+```
+
+```{r}
+library(ggplot2)
+library(ggtree)
+library(picante)
+library(RColorBrewer)
+```
+
+### Import Traits
+```{r}
+Traits=read.csv("./Formatted.Data/Traits.Final.csv", check.names = FALSE, header = TRUE, row.names = 1, stringsAsFactors = FALSE)
+```
+
+### Read in phylogeny
+```{r}
+phy=read.tree("./Formatted.Data/FullSeq_MAFFT_RAxML_Tree.newick")
+```
+
+
+### Combined Traits and Phylogeny
+```{r}
+combined=match.phylo.data(phy, Traits)
+``` 
+
+### Extract Phylogony and Traits from Combined
+```{r}
+phy.e <- combined$phy
+data.e <- combined$data
+```
+
+```{r}
+lb = phy.e$tip.label
+d = data.frame(label=lb, Order = paste(data.e$Order))
+e = data.frame(label=lb, Organism = paste(data.e$Organism))
+f = data.frame(label=lb, Traits = paste(data.e$WH))
+g = data.frame(label=lb, Traits = paste(data.e$TSH))
+h = data.frame(label=lb, Traits = paste(data.e$AP))
+```
+
+### Draw Tree
+```{r}
+Tree <- ggtree(phy.e, size = .2, branch.length = "none", ladderize = TRUE)
+```
+
+### Add Nodes
+```{r}
+Tree2 <- Tree + geom_text2(size=0, nudge_x =0.15, nudge_y = 0.1, aes(subset = !isTip, label=node))
+```
+
+### Add Bootstrap values
+```{r}
+q <- Tree
+x <- q$data
+x <- x[!x$isTip,]
+x$label <- as.numeric(x$label)
+y <- x[x$label >= 80,]
+Tree3 <- Tree2 + geom_text(size = 2.4, data=y, aes(label="*"), nudge_x = -0.2, nudge_y = 0.03)
+z <- x[x$label < 80,]
+Tree4 <- Tree3 + geom_text2(size = 0.9, data=z, aes(label="o"), nudge_x = -0.2, nudge_y = 0.3)
+```
+
+### Add Tip Labels
+```{r}
+Tree4 <- ((Tree4 %<+% d + geom_tiplab(size =0, aes(label=Order), align=TRUE, linetype = "blank", offset = 0.5)))
+Tree5 <- ((Tree4 %<+% e + geom_tiplab(size =1.5, aes(label=Organism), align=TRUE, linetype = "blank", offset = 0.5)) 
+        + geom_tiplab(size =1.5, aes(label=" "), align=TRUE, linetype = "blank", offset = 10))
+```
+
+
+```{r}
+TSH = c("Tree" = "#E45A5A", "Shrub" = "#847CA3", "Herb" = "#80792B")
+WH = c("Woody" = "#E45A5A", "Herbaceous" = "#80792B")
+AP = c("Annual" = "#DB4743", "Perennial" = "black")
+```
+
+#### Add Tip Point and Legend
+```{r}
+  Tree_WH <- (Tree5 %<+% f + geom_tippoint(size = 0.8, aes(shape=Traits, color=Traits), alpha=1)+theme(legend.position="none")) + scale_colour_manual(values = WH)
+print(Tree_WH)
+pdf("life.form.tree.pdf", 4, 10, useDingbats=F)
+print(Tree_WH)
+```
+
+
+```{r}
+  Tree_TSH <- (Tree5 %<+% g + geom_tippoint(size = 0.8, aes(shape= Traits, color = Traits), alpha=1)) +theme(legend.position="none") + scale_colour_manual(values = TSH)
+print(Tree_TSH) 
+
+pdf("forest.structure.tree.pdf", 4, 10, useDingbats=F)
+print(Tree_TSH) 
+
+```
+
+```{r}
+  Tree_AP <- (Tree5 %<+% h + geom_tippoint(size = 0.8, aes(shape= Traits, color = Traits), alpha=1)) +theme(legend.position="none") + scale_colour_manual(values = AP)
+print(Tree_AP) 
+
+pdf("Figure.S1.pdf", 4, 10, useDingbats=F)
+print(Tree_AP) 
+```
+
+```{r}
+Heatmap <- read.csv("./Formatted.Data/Heatmap.csv", check.names = FALSE, header = TRUE, row.names = 1)
+```
+
+```{r}
+Heatmap2 <- data.matrix(Heatmap)
+```
+
+```{r}
+Heatmap3=cut(Heatmap2, c(0,1,2,3,4,5)) %>% matrix(ncol=ncol(Heatmap))
+rownames(Heatmap3) = rownames(Heatmap2)
+colnames(Heatmap3) = c("LF","FS")
+```
+
+```{r}
+Tree6 <- ((Tree4 %<+% e + geom_tiplab(size =1.5, aes(label=Organism), align=TRUE, linetype = "blank", offset = 2.1)) 
+        + geom_tiplab(size =1.5, aes(label=" "), align=TRUE, linetype = "blank", offset = 10))
+```
+
+
+```{r}
+label_text <-  c("(0,1]", "(1,2]",  "(2,3]", "(3,4]", "(4,5]")
+gheatmap <- gheatmap(Tree6,Heatmap3, offset=-.3, width=0.1, colnames_angle=0, hjust=0.5, font.size=1.5, colnames_offset_y=-.1) +
+            scale_fill_manual(values = c("(0,1]"="#E45A5A","(1,2]"="#80792B","(2,3]"="#E45A5A","(3,4]"="#847CA3","(4,5]"="#80792B"), breaks=c(label_text)) +theme(legend.position="none")
+print(gheatmap)
+
+pdf("Figure.1.pdf", 4, 10, useDingbats=F)
+print(gheatmap)
+
+```
+

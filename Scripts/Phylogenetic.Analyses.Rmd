@@ -1,0 +1,163 @@
+---
+title: "Phylogenetic Analyses"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup}
+knitr::opts_knit$set(root.dir = "/Users/samanthaworthy/Documents/GitHub/Sandhills-Flora")
+```
+
+```{r}
+library(ggtree)
+library(picante)
+library(huxtable)
+```
+
+### Read in phylogeny
+```{r}
+phy=read.tree("./Formatted.Data/FullSeq_MAFFT_RAxML_Tree.newick")
+```
+
+### Read in community data matrix
+```{r}
+trait.cdm=(read.csv("./Formatted.Data/Trait.cdm.csv", 
+        check.names = FALSE, header = TRUE, row.names = 1))
+```
+
+### Prune the outgroup prior to analyses
+```{r}
+prune.tree=drop.tip(phy,"HS_05")
+```
+
+### Combine phylogeny and community data to check for mismatches
+```{r}
+Com=match.phylo.comm(prune.tree, trait.cdm)
+```
+
+### Extract phylogeny data from combined/consolidated data
+### 173 species in each dataframe
+```{r}
+phy.e=Com$phy
+com.e=Com$comm
+```
+
+### Convert phylogeny to cophenetic distance
+```{r}
+phydist=cophenetic(phy.e)
+```
+
+#### Separate analyses for each trait
+```{r}
+life.form.cdm = com.e[c(2,3),]
+forest.strat.cdm = com.e[c(4,5,6),]
+life.history.cdm = com.e[c(7,8),]
+```
+
+### Mean Pairwise Distance for each trait
+```{r}
+mpd.life.form = ses.mpd(life.form.cdm, phydist, null.model="taxa.labels", abundance.weighted=FALSE, runs=999, iterations=1000)
+mpd.forest.strata = ses.mpd(forest.strat.cdm, phydist, null.model="taxa.labels", abundance.weighted=FALSE, runs=999, iterations=1000)
+mpd.life.history = ses.mpd(life.history.cdm, phydist, null.model="taxa.labels", abundance.weighted=FALSE, runs=999, iterations=1000)
+mpd.life.form
+mpd.forest.strata
+mpd.life.history
+```
+
+### Mean Nearest Taxon Distance for each trait
+```{r}
+mntd.life.form = ses.mntd(life.form.cdm, phydist, null.model="taxa.labels", abundance.weighted=FALSE, runs=999, iterations=1000)
+mntd.forest.strata = ses.mntd(forest.strat.cdm, phydist, null.model="taxa.labels", abundance.weighted=FALSE, runs=999, iterations=1000)
+mntd.life.history = ses.mntd(life.history.cdm, phydist, null.model="taxa.labels", abundance.weighted=FALSE, runs=999, iterations=1000)
+mntd.life.form
+mntd.forest.strata
+mntd.life.history
+```
+
+### Divide data set into annuals and perennials
+
+```{r}
+trait.cdm.t = as.data.frame(t(trait.cdm))
+annual.t = subset(trait.cdm.t, trait.cdm.t$Annual == 1)
+annual.cdm = t(annual.t)
+```
+
+```{r}
+perennial.t = subset(trait.cdm.t, trait.cdm.t$Perennual == 1)
+perennial.cdm= t(perennial.t)
+```
+
+### Combine phylogeny and annual data to check for mismatches
+```{r}
+annual.com=match.phylo.comm(prune.tree, annual.cdm)
+```
+
+### Combine phylogeny and perennial data to check for mismatches
+```{r}
+perennial.com=match.phylo.comm(prune.tree, perennial.cdm)
+```
+
+### Extract data from combined/consolidated data
+### 25 species of annual plants in each dataframe
+```{r}
+phy.annual=annual.com$phy
+com.annual=annual.com$comm
+```
+
+### Extract data from combined/consolidated data
+### 147 species of perennial plants in each dataframe
+```{r}
+phy.perennial=perennial.com$phy
+com.perennial=perennial.com$comm
+```
+
+### Convert phylogeny to cophenetic distance
+```{r}
+phydist.annual=cophenetic(phy.annual)
+phydist.perennial=cophenetic(phy.perennial)
+```
+
+#### Separate analyses for each trait
+```{r}
+life.form.annual = com.annual[c(2,3),]
+forest.strat.annual = com.annual[c(4,5,6),]
+life.form.perennial = com.perennial[c(2,3),]
+forest.strat.perennial = com.perennial[c(4,5,6),]
+```
+
+### Mean Pairwise Distance for each trait for annuals
+```{r}
+mpd.life.form.annual = ses.mpd(life.form.annual, phydist.annual, null.model="taxa.labels", abundance.weighted=FALSE, runs=999, iterations=1000)
+mpd.forest.strata.annual = ses.mpd(forest.strat.annual, phydist.annual, null.model="taxa.labels", abundance.weighted=FALSE, runs=999, iterations=1000)
+mpd.life.form.annual
+mpd.forest.strata.annual
+```
+
+### Mean Pairwise Distance for each trait for perennials
+```{r}
+mpd.life.form.perennial = ses.mpd(life.form.perennial, phydist.perennial, null.model="taxa.labels", abundance.weighted=FALSE, runs=999, iterations=1000)
+mpd.forest.strata.perennial = ses.mpd(forest.strat.perennial, phydist.perennial, null.model="taxa.labels", abundance.weighted=FALSE, runs=999, iterations=1000)
+mpd.life.form.perennial
+mpd.forest.strata.perennial
+```
+
+### Mean Nearest Taxon Distance for each trait for annuals
+```{r}
+mntd.life.form.annual = ses.mntd(life.form.annual, phydist.annual, null.model="taxa.labels", abundance.weighted=FALSE, runs=999, iterations=1000)
+mntd.forest.strata.annual = ses.mntd(forest.strat.annual, phydist.annual, null.model="taxa.labels", abundance.weighted=FALSE, runs=999, iterations=1000)
+mntd.life.form.annual
+mntd.forest.strata.annual
+```
+
+### Mean Nearest Taxon Distance for each trait for perennials
+```{r}
+mntd.life.form.perennial = ses.mntd(life.form.perennial, phydist.perennial, null.model="taxa.labels", abundance.weighted=FALSE, runs=999, iterations=1000)
+mntd.forest.strata.perennial  = ses.mntd(forest.strat.perennial, phydist.perennial, null.model="taxa.labels", abundance.weighted=FALSE, runs=999, iterations=1000)
+mntd.life.form.perennial
+mntd.forest.strata.perennial
+```
+
+
+
+
